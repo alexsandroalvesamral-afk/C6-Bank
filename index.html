@@ -12,22 +12,17 @@ body{
     font-family:-apple-system,BlinkMacSystemFont;
     background:#050816;
     color:white;
-    overflow:hidden;
 }
 
 /* telas */
 .screen{
-    position:fixed;
+    position:absolute;
     width:100%;
     height:100%;
-    top:0;
-    left:0;
-    transition:0.5s;
+    transition:0.4s;
 }
 
-.hidden{
-    transform:translateX(100%);
-}
+.hidden{ transform:translateX(100%); }
 
 /* topo */
 .header{
@@ -58,13 +53,12 @@ input{
 /* botão */
 button{
     width:100%;
-    padding:15px;
-    margin-top:15px;
+    padding:14px;
+    margin-top:10px;
     border:none;
     border-radius:14px;
     background:linear-gradient(135deg,#22c55e,#16a34a);
     color:white;
-    font-weight:600;
 }
 
 /* notif */
@@ -77,16 +71,15 @@ button{
     padding:15px;
     border-radius:15px;
     transition:0.5s;
-    box-shadow:0 0 20px rgba(0,0,0,0.5);
 }
 
-/* comprovante */
-.comp{
-    font-size:14px;
-    line-height:1.8;
+/* histórico */
+.history{
+    font-size:13px;
+    opacity:0.8;
 }
 
-/* footer discreto */
+/* footer */
 .footer{
     position:fixed;
     bottom:5px;
@@ -107,52 +100,37 @@ button{
 <div class="header">Área PIX</div>
 
 <div class="card">
-<input id="nome" placeholder="Nome do recebedor">
-<input id="valor" placeholder="Valor (ex: 2500)">
-<button onclick="simular()">Simular recebimento</button>
-</div>
+<input id="nome" placeholder="Nome">
+<input id="valor" placeholder="Valor">
+<button onclick="simular()">Simular</button>
 </div>
 
-<!-- LOADING -->
-<div id="loading" class="screen hidden">
-<div class="header">Processando...</div>
+<div class="card">
+<h3>Histórico</h3>
+<div id="historico" class="history"></div>
+</div>
 </div>
 
 <!-- COMPROVANTE -->
 <div id="comp" class="screen hidden">
 <div class="header">Comprovante</div>
 
-<div class="card comp">
+<div class="card" id="areaPrint">
 <p><b>Destinatário:</b> <span id="c_nome"></span></p>
 <p><b>Valor:</b> R$ <span id="c_valor"></span></p>
-<p><b>Instituição:</b> Banco Digital</p>
 <p><b>Status:</b> Concluído</p>
 <p><b>Data:</b> <span id="data"></span></p>
 <p><b>ID:</b> <span id="id"></span></p>
 </div>
 
+<button onclick="baixar()">Gerar imagem</button>
 <button onclick="voltar()">Voltar</button>
 </div>
 
 <div class="footer">simulação</div>
 
 <script>
-
-function vibrar(){
-    if(navigator.vibrate){
-        navigator.vibrate([200,100,200]);
-    }
-}
-
-function som(){
-    try{
-        let ctx = new (window.AudioContext||window.webkitAudioContext)();
-        let osc = ctx.createOscillator();
-        osc.connect(ctx.destination);
-        osc.start();
-        setTimeout(()=>osc.stop(),150);
-    }catch(e){}
-}
+let historico = [];
 
 function mudar(a,b){
     document.getElementById(a).classList.add("hidden");
@@ -169,37 +147,44 @@ function simular(){
         return;
     }
 
-    mudar("home","loading");
+    let agora = new Date();
+    let data = agora.toLocaleString();
+    let id = "PIX" + Math.floor(Math.random()*999999999);
 
-    setTimeout(()=>{
+    document.getElementById("c_nome").innerText = nome;
+    document.getElementById("c_valor").innerText = parseFloat(valor).toFixed(2);
+    document.getElementById("data").innerText = data;
+    document.getElementById("id").innerText = id;
 
-        let n = document.getElementById("notif");
-        n.style.top="20px";
+    historico.push(`${nome} - R$ ${valor}`);
+    atualizarHistorico();
 
-        vibrar();
-        som();
+    let n = document.getElementById("notif");
+    n.style.top="20px";
+    setTimeout(()=> n.style.top="-100px",2000);
 
-        setTimeout(()=> n.style.top="-100px",2000);
+    mudar("home","comp");
+}
 
-        document.getElementById("c_nome").innerText = nome;
-        document.getElementById("c_valor").innerText = parseFloat(valor).toFixed(2);
-
-        let agora = new Date();
-        document.getElementById("data").innerText =
-        agora.toLocaleDateString()+" "+agora.toLocaleTimeString();
-
-        let id = "E2E" + Math.floor(Math.random()*999999999999);
-        document.getElementById("id").innerText = id;
-
-        mudar("loading","comp");
-
-    },1500);
+function atualizarHistorico(){
+    let h = document.getElementById("historico");
+    h.innerHTML = historico.map(x=>"<p>"+x+"</p>").join("");
 }
 
 function voltar(){
     mudar("comp","home");
 }
 
+function baixar(){
+    let texto = document.getElementById("areaPrint").innerText;
+
+    let blob = new Blob([texto], {type: "text/plain"});
+    let a = document.createElement("a");
+
+    a.href = URL.createObjectURL(blob);
+    a.download = "comprovante.txt";
+    a.click();
+}
 </script>
 
 </body>
