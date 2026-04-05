@@ -4,169 +4,159 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>Simulador Anti-Golpe</title>
+<title>Simulador Educativo PIX</title>
 
 <style>
-body {
+body{
     margin:0;
-    font-family:-apple-system,BlinkMacSystemFont;
+    font-family:-apple-system;
     background:#0a0f1f;
     color:white;
-    overflow:hidden;
 }
 
-.screen {
-    position:fixed;
+.screen{
+    position:absolute;
     width:100%;
     height:100%;
+    top:0;
+    left:0;
     transition:0.4s;
 }
 
-.hidden { transform:translateX(100%); }
+.hidden{
+    transform:translateX(100%);
+    opacity:0;
+}
 
-.header { padding:20px; font-size:18px; }
+.header{
+    padding:20px;
+    font-size:18px;
+}
 
-.balance { padding:20px; }
-.balance h1 { font-size:32px; }
-
-.card {
+.card{
     background:#121a2f;
     margin:15px;
     padding:15px;
     border-radius:16px;
 }
 
-.btn {
+input{
+    width:90%;
+    padding:12px;
+    margin:10px;
+    border-radius:10px;
+    border:none;
+}
+
+.btn{
     display:block;
     margin:15px;
     padding:14px;
     border:none;
     border-radius:12px;
-    background:linear-gradient(135deg,#22c55e,#16a34a);
+    background:#22c55e;
     color:white;
+    width:90%;
 }
 
-.btn-danger { background:#ef4444; }
-
-.notif {
-    position:fixed;
-    top:-80px;
-    left:50%;
-    transform:translateX(-50%);
-    background:#1f2937;
-    padding:12px;
-    border-radius:12px;
-    transition:0.4s;
-}
-
-.result {
+.result{
     margin:20px;
     padding:15px;
     border-radius:12px;
     display:none;
 }
 
-.score {
-    position:fixed;
-    bottom:10px;
-    right:10px;
-    background:#22c55e;
-    padding:10px;
-    border-radius:10px;
+.warning{
+    font-size:12px;
+    opacity:0.6;
+    text-align:center;
+    margin-top:10px;
 }
 </style>
 </head>
 
 <body>
 
-<div class="notif" id="notif">💸 PIX recebido R$ 2.450</div>
-<div class="score" id="score">Score: 0</div>
-
+<!-- HOME -->
 <div id="home" class="screen">
-<div class="header">Olá 👋</div>
+<div class="header">Simulador Educativo</div>
 
-<div class="balance">
-<p>Saldo</p>
-<h1>R$ 1.280,45</h1>
+<div class="card">
+<p>Nome do recebedor</p>
+<input id="nome" placeholder="Ex: João Silva">
+
+<p>Valor do PIX</p>
+<input id="valor" placeholder="Ex: 2450">
 </div>
 
-<button class="btn" onclick="start()">Iniciar Simulação</button>
+<button class="btn" onclick="gerar()">Simular PIX</button>
+
+<div class="warning">
+⚠️ Simulação educativa — não representa banco real
+</div>
 </div>
 
+<!-- PIX -->
 <div id="pix" class="screen hidden">
-<div class="header">Recebimento</div>
+<div class="header">Transferência recebida</div>
 
-<div class="balance">
-<h1>R$ 2.450</h1>
-<p>Status: aguardando</p>
+<div class="card">
+<h2 id="valorPix"></h2>
+<p id="nomePix"></p>
+<p>Status: aguardando confirmação</p>
 </div>
 
 <button class="btn" onclick="comprovante()">Ver comprovante</button>
 </div>
 
+<!-- COMPROVANTE -->
 <div id="comp" class="screen hidden">
-<div class="header">Comprovante</div>
+<div class="header">Comprovante (Simulação)</div>
 
 <div class="card">
-<p>Origem: Desconhecida</p>
-<p>Processando...</p>
+<p><b>Destinatário:</b> <span id="nomeComp"></span></p>
+<p><b>Valor:</b> <span id="valorComp"></span></p>
+<p><b>Status:</b> Processando</p>
+<p style="color:#facc15;">⚠️ Pode ser golpe (simulação)</p>
 </div>
 
 <button class="btn" onclick="quiz()">Continuar</button>
 </div>
 
+<!-- QUIZ -->
 <div id="quiz" class="screen hidden">
 <div class="header">Você confiaria?</div>
 
 <div class="card">
-<p>Você recebeu um link para confirmar o PIX.</p>
+<p>Alguém te enviou esse comprovante e pediu confirmação urgente.</p>
 </div>
 
 <button class="btn" onclick="resposta(false)">Confiar</button>
-<button class="btn btn-danger" onclick="resposta(true)">Desconfiar</button>
+<button class="btn" style="background:#ef4444;" onclick="resposta(true)">Desconfiar</button>
 
 <div id="resultado" class="result"></div>
 </div>
 
 <script>
-let score = 0;
+let nome = "";
+let valor = "";
 
-function vibrar(){
-    if(navigator.vibrate){
-        navigator.vibrate(200);
+function gerar(){
+    nome = document.getElementById("nome").value;
+    valor = document.getElementById("valor").value;
+
+    if(!nome || !valor){
+        alert("Preencha os dados");
+        return;
     }
-}
 
-function som(){
-    try {
-        const AudioContext = window.AudioContext || window.webkitAudioContext;
-        if (!AudioContext) return;
+    document.getElementById("nomePix").innerText = nome;
+    document.getElementById("valorPix").innerText = "R$ " + valor;
 
-        let ctx = new AudioContext();
+    document.getElementById("nomeComp").innerText = nome;
+    document.getElementById("valorComp").innerText = "R$ " + valor;
 
-        if (ctx.state === "suspended") {
-            ctx.resume();
-        }
-
-        let osc = ctx.createOscillator();
-        osc.connect(ctx.destination);
-        osc.start();
-
-        setTimeout(()=>osc.stop(),100);
-    } catch(e){}
-}
-
-function start(){
-    let n = document.getElementById("notif");
-    n.style.top="20px";
-
-    vibrar();
-    som();
-
-    setTimeout(()=>{
-        n.style.top="-80px";
-        mudar("home","pix");
-    },2000);
+    mudar("home","pix");
 }
 
 function comprovante(){
@@ -182,16 +172,12 @@ function resposta(correto){
     r.style.display="block";
 
     if(correto){
-        score += 10;
         r.style.background="#14532d";
-        r.innerHTML="✅ Boa! Golpe identificado.";
+        r.innerHTML="✅ Correto! Era tentativa de golpe.";
     } else {
-        score -= 5;
         r.style.background="#7f1d1d";
-        r.innerHTML="❌ Erro! Isso é golpe.";
+        r.innerHTML="❌ Errado! Nunca confie sem verificar.";
     }
-
-    document.getElementById("score").innerText="Score: "+score;
 }
 
 function mudar(a,b){
