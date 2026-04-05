@@ -4,186 +4,202 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>Simulador Educativo PIX</title>
+<title>PIX</title>
 
 <style>
 body{
     margin:0;
-    font-family:-apple-system;
-    background:#0a0f1f;
+    font-family:-apple-system,BlinkMacSystemFont;
+    background:#050816;
     color:white;
+    overflow:hidden;
 }
 
+/* telas */
 .screen{
-    position:absolute;
+    position:fixed;
     width:100%;
     height:100%;
     top:0;
     left:0;
-    transition:0.4s;
+    transition:0.5s;
 }
 
 .hidden{
     transform:translateX(100%);
-    opacity:0;
 }
 
+/* topo */
 .header{
     padding:20px;
     font-size:18px;
+    font-weight:600;
 }
 
+/* card */
 .card{
-    background:#121a2f;
+    background:#0f172a;
     margin:15px;
-    padding:15px;
-    border-radius:16px;
+    padding:20px;
+    border-radius:20px;
 }
 
+/* inputs */
 input{
-    width:90%;
-    padding:12px;
-    margin:10px;
-    border-radius:10px;
-    border:none;
-}
-
-.btn{
-    display:block;
-    margin:15px;
+    width:100%;
     padding:14px;
+    margin-top:10px;
     border:none;
     border-radius:12px;
-    background:#22c55e;
+    background:#1e293b;
     color:white;
-    width:90%;
 }
 
-.result{
-    margin:20px;
+/* botão */
+button{
+    width:100%;
     padding:15px;
-    border-radius:12px;
-    display:none;
+    margin-top:15px;
+    border:none;
+    border-radius:14px;
+    background:linear-gradient(135deg,#22c55e,#16a34a);
+    color:white;
+    font-weight:600;
 }
 
-.warning{
-    font-size:12px;
-    opacity:0.6;
+/* notif */
+.notif{
+    position:fixed;
+    top:-100px;
+    left:50%;
+    transform:translateX(-50%);
+    background:#111827;
+    padding:15px;
+    border-radius:15px;
+    transition:0.5s;
+    box-shadow:0 0 20px rgba(0,0,0,0.5);
+}
+
+/* comprovante */
+.comp{
+    font-size:14px;
+    line-height:1.8;
+}
+
+/* footer discreto */
+.footer{
+    position:fixed;
+    bottom:5px;
+    width:100%;
     text-align:center;
-    margin-top:10px;
+    font-size:10px;
+    opacity:0.3;
 }
 </style>
 </head>
 
 <body>
 
+<div class="notif" id="notif">💸 PIX recebido</div>
+
 <!-- HOME -->
 <div id="home" class="screen">
-<div class="header">Simulador Educativo</div>
+<div class="header">Área PIX</div>
 
 <div class="card">
-<p>Nome do recebedor</p>
-<input id="nome" placeholder="Ex: João Silva">
-
-<p>Valor do PIX</p>
-<input id="valor" placeholder="Ex: 2450">
-</div>
-
-<button class="btn" onclick="gerar()">Simular PIX</button>
-
-<div class="warning">
-⚠️ Simulação educativa — não representa banco real
+<input id="nome" placeholder="Nome do recebedor">
+<input id="valor" placeholder="Valor (ex: 2500)">
+<button onclick="simular()">Simular recebimento</button>
 </div>
 </div>
 
-<!-- PIX -->
-<div id="pix" class="screen hidden">
-<div class="header">Transferência recebida</div>
-
-<div class="card">
-<h2 id="valorPix"></h2>
-<p id="nomePix"></p>
-<p>Status: aguardando confirmação</p>
-</div>
-
-<button class="btn" onclick="comprovante()">Ver comprovante</button>
+<!-- LOADING -->
+<div id="loading" class="screen hidden">
+<div class="header">Processando...</div>
 </div>
 
 <!-- COMPROVANTE -->
 <div id="comp" class="screen hidden">
-<div class="header">Comprovante (Simulação)</div>
+<div class="header">Comprovante</div>
 
-<div class="card">
-<p><b>Destinatário:</b> <span id="nomeComp"></span></p>
-<p><b>Valor:</b> <span id="valorComp"></span></p>
-<p><b>Status:</b> Processando</p>
-<p style="color:#facc15;">⚠️ Pode ser golpe (simulação)</p>
+<div class="card comp">
+<p><b>Destinatário:</b> <span id="c_nome"></span></p>
+<p><b>Valor:</b> R$ <span id="c_valor"></span></p>
+<p><b>Instituição:</b> Banco Digital</p>
+<p><b>Status:</b> Concluído</p>
+<p><b>Data:</b> <span id="data"></span></p>
+<p><b>ID:</b> <span id="id"></span></p>
 </div>
 
-<button class="btn" onclick="quiz()">Continuar</button>
+<button onclick="voltar()">Voltar</button>
 </div>
 
-<!-- QUIZ -->
-<div id="quiz" class="screen hidden">
-<div class="header">Você confiaria?</div>
-
-<div class="card">
-<p>Alguém te enviou esse comprovante e pediu confirmação urgente.</p>
-</div>
-
-<button class="btn" onclick="resposta(false)">Confiar</button>
-<button class="btn" style="background:#ef4444;" onclick="resposta(true)">Desconfiar</button>
-
-<div id="resultado" class="result"></div>
-</div>
+<div class="footer">simulação</div>
 
 <script>
-let nome = "";
-let valor = "";
 
-function gerar(){
-    nome = document.getElementById("nome").value;
-    valor = document.getElementById("valor").value;
-
-    if(!nome || !valor){
-        alert("Preencha os dados");
-        return;
+function vibrar(){
+    if(navigator.vibrate){
+        navigator.vibrate([200,100,200]);
     }
-
-    document.getElementById("nomePix").innerText = nome;
-    document.getElementById("valorPix").innerText = "R$ " + valor;
-
-    document.getElementById("nomeComp").innerText = nome;
-    document.getElementById("valorComp").innerText = "R$ " + valor;
-
-    mudar("home","pix");
 }
 
-function comprovante(){
-    mudar("pix","comp");
-}
-
-function quiz(){
-    mudar("comp","quiz");
-}
-
-function resposta(correto){
-    let r = document.getElementById("resultado");
-    r.style.display="block";
-
-    if(correto){
-        r.style.background="#14532d";
-        r.innerHTML="✅ Correto! Era tentativa de golpe.";
-    } else {
-        r.style.background="#7f1d1d";
-        r.innerHTML="❌ Errado! Nunca confie sem verificar.";
-    }
+function som(){
+    try{
+        let ctx = new (window.AudioContext||window.webkitAudioContext)();
+        let osc = ctx.createOscillator();
+        osc.connect(ctx.destination);
+        osc.start();
+        setTimeout(()=>osc.stop(),150);
+    }catch(e){}
 }
 
 function mudar(a,b){
     document.getElementById(a).classList.add("hidden");
     document.getElementById(b).classList.remove("hidden");
 }
+
+function simular(){
+
+    let nome = document.getElementById("nome").value;
+    let valor = document.getElementById("valor").value;
+
+    if(!nome || !valor){
+        alert("Preencha tudo");
+        return;
+    }
+
+    mudar("home","loading");
+
+    setTimeout(()=>{
+
+        let n = document.getElementById("notif");
+        n.style.top="20px";
+
+        vibrar();
+        som();
+
+        setTimeout(()=> n.style.top="-100px",2000);
+
+        document.getElementById("c_nome").innerText = nome;
+        document.getElementById("c_valor").innerText = parseFloat(valor).toFixed(2);
+
+        let agora = new Date();
+        document.getElementById("data").innerText =
+        agora.toLocaleDateString()+" "+agora.toLocaleTimeString();
+
+        let id = "E2E" + Math.floor(Math.random()*999999999999);
+        document.getElementById("id").innerText = id;
+
+        mudar("loading","comp");
+
+    },1500);
+}
+
+function voltar(){
+    mudar("comp","home");
+}
+
 </script>
 
 </body>
