@@ -1,1 +1,204 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
+<title>Simulador Anti-Golpe</title>
+
+<style>
+body {
+    margin:0;
+    font-family:-apple-system,BlinkMacSystemFont;
+    background:#0a0f1f;
+    color:white;
+    overflow:hidden;
+}
+
+.screen {
+    position:fixed;
+    width:100%;
+    height:100%;
+    transition:0.4s;
+}
+
+.hidden { transform:translateX(100%); }
+
+.header { padding:20px; font-size:18px; }
+
+.balance { padding:20px; }
+.balance h1 { font-size:32px; }
+
+.card {
+    background:#121a2f;
+    margin:15px;
+    padding:15px;
+    border-radius:16px;
+}
+
+.btn {
+    display:block;
+    margin:15px;
+    padding:14px;
+    border:none;
+    border-radius:12px;
+    background:linear-gradient(135deg,#22c55e,#16a34a);
+    color:white;
+}
+
+.btn-danger { background:#ef4444; }
+
+.notif {
+    position:fixed;
+    top:-80px;
+    left:50%;
+    transform:translateX(-50%);
+    background:#1f2937;
+    padding:12px;
+    border-radius:12px;
+    transition:0.4s;
+}
+
+.result {
+    margin:20px;
+    padding:15px;
+    border-radius:12px;
+    display:none;
+}
+
+.score {
+    position:fixed;
+    bottom:10px;
+    right:10px;
+    background:#22c55e;
+    padding:10px;
+    border-radius:10px;
+}
+</style>
+</head>
+
+<body>
+
+<div class="notif" id="notif">💸 PIX recebido R$ 2.450</div>
+<div class="score" id="score">Score: 0</div>
+
+<div id="home" class="screen">
+<div class="header">Olá 👋</div>
+
+<div class="balance">
+<p>Saldo</p>
+<h1>R$ 1.280,45</h1>
+</div>
+
+<button class="btn" onclick="start()">Iniciar Simulação</button>
+</div>
+
+<div id="pix" class="screen hidden">
+<div class="header">Recebimento</div>
+
+<div class="balance">
+<h1>R$ 2.450</h1>
+<p>Status: aguardando</p>
+</div>
+
+<button class="btn" onclick="comprovante()">Ver comprovante</button>
+</div>
+
+<div id="comp" class="screen hidden">
+<div class="header">Comprovante</div>
+
+<div class="card">
+<p>Origem: Desconhecida</p>
+<p>Processando...</p>
+</div>
+
+<button class="btn" onclick="quiz()">Continuar</button>
+</div>
+
+<div id="quiz" class="screen hidden">
+<div class="header">Você confiaria?</div>
+
+<div class="card">
+<p>Você recebeu um link para confirmar o PIX.</p>
+</div>
+
+<button class="btn" onclick="resposta(false)">Confiar</button>
+<button class="btn btn-danger" onclick="resposta(true)">Desconfiar</button>
+
+<div id="resultado" class="result"></div>
+</div>
+
+<script>
+let score = 0;
+
+function vibrar(){
+    if(navigator.vibrate){
+        navigator.vibrate(200);
+    }
+}
+
+function som(){
+    try {
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        if (!AudioContext) return;
+
+        let ctx = new AudioContext();
+
+        if (ctx.state === "suspended") {
+            ctx.resume();
+        }
+
+        let osc = ctx.createOscillator();
+        osc.connect(ctx.destination);
+        osc.start();
+
+        setTimeout(()=>osc.stop(),100);
+    } catch(e){}
+}
+
+function start(){
+    let n = document.getElementById("notif");
+    n.style.top="20px";
+
+    vibrar();
+    som();
+
+    setTimeout(()=>{
+        n.style.top="-80px";
+        mudar("home","pix");
+    },2000);
+}
+
+function comprovante(){
+    mudar("pix","comp");
+}
+
+function quiz(){
+    mudar("comp","quiz");
+}
+
+function resposta(correto){
+    let r = document.getElementById("resultado");
+    r.style.display="block";
+
+    if(correto){
+        score += 10;
+        r.style.background="#14532d";
+        r.innerHTML="✅ Boa! Golpe identificado.";
+    } else {
+        score -= 5;
+        r.style.background="#7f1d1d";
+        r.innerHTML="❌ Erro! Isso é golpe.";
+    }
+
+    document.getElementById("score").innerText="Score: "+score;
+}
+
+function mudar(a,b){
+    document.getElementById(a).classList.add("hidden");
+    document.getElementById(b).classList.remove("hidden");
+}
+</script>
+
+</body>
+</html>
